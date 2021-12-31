@@ -1,0 +1,4 @@
+infi.systray
+
+# Building requires:
+PyInstall
