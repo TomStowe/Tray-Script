@@ -23,9 +23,10 @@ def loadSettings(filePath):
     for jsonCommand in jsonCommands:
         name = jsonCommand.get("name", None)
         command = jsonCommand.get("command", None)
+        icon = jsonCommand.get("icon", None)
         
         if (name != None and command != None):
-            commands.append(Command(name, command))
+            commands.append(Command(name, command, icon))
     
     return commands
         

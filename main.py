@@ -1,6 +1,7 @@
 from infi.systray import SysTrayIcon
 import os, sys
 from src.Options import Options
+from os.path import exists, splitext
 
 ##### Config #####
 timeoutSeconds = 60
@@ -15,9 +16,19 @@ options = Options(resetProgram)
 # Convert the command list to a tuple list
 updatedCommands = []
 for command in options.commands:
+    icon = command.icon
+    if (command.icon == "" or command.icon == None):
+        icon = None
+    else:
+        _, extension = splitext(command.icon)
+        
+        # Ensure that the icon is valid
+        if (not(exists(command.icon) and extension == ".ico")):
+            icon = None
+        
     updatedCommands.append((
         command.name,
-        None,
+        icon,
         command.getActionableCommand())
     )
     

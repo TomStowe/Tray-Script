@@ -3,6 +3,7 @@ from tkinter import ttk
 from src.ConfigReader import loadSettings, saveSettings
 from src.Command import Command, runCommand
 import threading
+from os.path import exists, splitext
 
 selectedOptionName = None
 
@@ -15,6 +16,7 @@ class Options:
     selectedIndex = 0
     selectedCommandNameField = None
     selectedCommandField = None
+    selectedIconField = None
     
     """
         Constructor for the options menu
@@ -75,24 +77,29 @@ class Options:
         ttk.Label(frame, text='Command:').grid(column=0, row=1, sticky=tk.W)
         self.selectedCommandField = tk.Text(frame, width=27, height=10)
         self.selectedCommandField.grid(column=1, row=1, sticky=tk.W)
+
+        # The icon
+        ttk.Label(frame, text='Path To Icon: (.ico files only').grid(column=0, row=2, sticky=tk.W)
+        self.selectedIconField = tk.Text(frame, width=27, height=1)
+        self.selectedIconField.grid(column=1, row=2, sticky=tk.W)
         
         # Error Text
         self.errorText = tk.StringVar()
         self.errorText.set("")
         self.errorLabel = ttk.Label(frame, textvariable=self.errorText)
         self.errorLabel.configure(foreground="red")
-        self.errorLabel.grid(column=0, columnspan=4, row=2)
+        self.errorLabel.grid(column=0, columnspan=4, row=3)
         
         # Buttons
         buttonWidth = 25
         self.addNewCommandButton = ttk.Button(frame, text="Add New Command", command=self.__addNewCommand, width=buttonWidth)
-        self.addNewCommandButton.grid(column=0, row=3, sticky=tk.W)
+        self.addNewCommandButton.grid(column=0, row=4, sticky=tk.W)
         self.updateSelectedButton = ttk.Button(frame, text="Update Selected Command", command=self.__updateCommand, width=buttonWidth)
-        self.updateSelectedButton.grid(column=1, row=3, sticky=tk.W)
+        self.updateSelectedButton.grid(column=1, row=4, sticky=tk.W)
         self.deleteSelectedButton = ttk.Button(frame, text="Test Command", command=self.__testCommand, width=buttonWidth)
-        self.deleteSelectedButton.grid(column=0, row=4, sticky=tk.W)
+        self.deleteSelectedButton.grid(column=0, row=5, sticky=tk.W)
         self.deleteSelectedButton = ttk.Button(frame, text="Delete Command", command=self.__deleteCommand, width=buttonWidth)
-        self.deleteSelectedButton.grid(column=1, row=4, sticky=tk.W)
+        self.deleteSelectedButton.grid(column=1, row=5, sticky=tk.W)
 
         for widget in frame.winfo_children():
             widget.grid(padx=0, pady=5)
@@ -143,12 +150,18 @@ class Options:
             """ handle item selected event
             """
             # get selected indices
+            if (len(self.listBox.curselection()) == 0):
+                return
+            
             selectedCommand = self.commands[self.listBox.curselection()[0]]
             self.selectedIndex = self.listBox.curselection()[0]
             self.selectedCommandNameField.delete(1.0, "end")
             self.selectedCommandNameField.insert(1.0, selectedCommand.name)
             self.selectedCommandField.delete(1.0, "end")
             self.selectedCommandField.insert(1.0, selectedCommand.command)
+            self.selectedIconField.delete(1.0, "end")
+            if (selectedCommand.icon != None):
+                self.selectedIconField.insert(1.0, selectedCommand.icon)
             self.__toggleItemSelected(True)
             
         self.listBox.bind('<<ListboxSelect>>', items_selected)
@@ -181,7 +194,6 @@ class Options:
         command = self.__getCommandFromTextInputs()
         
         if (command == None):
-            self.errorText.set("Could not add a new command.\nPlease ensure the name and command box are filled in")
             return
         
         self.commands.append(command)
@@ -195,7 +207,6 @@ class Options:
         command = self.__getCommandFromTextInputs()
         
         if (command == None or self.selectedIndex == None or self.selectedIndex > len(self.commands)):
-            self.errorText.set("Could not update the command.\nPlease ensure the name and command box are filled in")
             return
         
         self.commands[self.selectedIndex] = command
@@ -237,11 +248,21 @@ class Options:
     def __getCommandFromTextInputs(self):
         commandName = self.selectedCommandNameField.get(1.0, "end").rstrip("\n")
         command = self.selectedCommandField.get(1.0, "end").rstrip("\n")
+        icon = self.selectedIconField.get(1.0, "end").rstrip("\n")
         
         if (commandName == None or commandName == "" or command == None or command == ""):
+            self.errorText.set("Please ensure the name and command box are filled in")
             return None
         
-        return Command(commandName, command)
+        if (icon == ""):
+            icon = None
+        else:
+            _, extension = splitext(icon)
+            if (not(exists(icon) and extension == ".ico")):
+                self.errorText.set("Please ensure that the icon exists and is an ico file")
+                return
+        
+        return Command(commandName, command, icon)
         
     """
         A function to update the settings stored in the settings file and updates the options window
