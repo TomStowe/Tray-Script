@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk
 from src.ConfigReader import loadSettings, saveSettings
 from src.Command import Command, runCommand
-import threading
 from os.path import exists, splitext
 
 selectedOptionName = None
@@ -16,7 +15,8 @@ class Options:
     selectedIndex = 0
     selectedCommandNameField = None
     selectedCommandField = None
-    selectedIconField = None
+    selectedCommandRunInBackgroundField = None
+    selectedCommandIconField = None
     
     """
         Constructor for the options menu
@@ -77,29 +77,35 @@ class Options:
         ttk.Label(frame, text='Command:').grid(column=0, row=1, sticky=tk.W)
         self.selectedCommandField = tk.Text(frame, width=27, height=10)
         self.selectedCommandField.grid(column=1, row=1, sticky=tk.W)
+        
+        # Whether the command should be run in the background or not
+        ttk.Label(frame, text='Run command in background').grid(column=0, row=2, sticky=tk.W)
+        self.selectedCommandRunInBackgroundField = tk.IntVar()
+        checkBox = tk.Checkbutton(frame, width=27, height=1, variable=self.selectedCommandRunInBackgroundField)
+        checkBox.grid(column=1, row=2, sticky=tk.W)
 
         # The icon
-        ttk.Label(frame, text='Path To Icon: (.ico files only').grid(column=0, row=2, sticky=tk.W)
-        self.selectedIconField = tk.Text(frame, width=27, height=1)
-        self.selectedIconField.grid(column=1, row=2, sticky=tk.W)
+        ttk.Label(frame, text='Path To Icon: (.ico files only)').grid(column=0, row=3, sticky=tk.W)
+        self.selectedCommandIconField = tk.Text(frame, width=27, height=1)
+        self.selectedCommandIconField.grid(column=1, row=3, sticky=tk.W)
         
         # Error Text
         self.errorText = tk.StringVar()
         self.errorText.set("")
         self.errorLabel = ttk.Label(frame, textvariable=self.errorText)
         self.errorLabel.configure(foreground="red")
-        self.errorLabel.grid(column=0, columnspan=4, row=3)
+        self.errorLabel.grid(column=0, columnspan=4, row=4)
         
         # Buttons
         buttonWidth = 25
         self.addNewCommandButton = ttk.Button(frame, text="Add New Command", command=self.__addNewCommand, width=buttonWidth)
-        self.addNewCommandButton.grid(column=0, row=4, sticky=tk.W)
+        self.addNewCommandButton.grid(column=0, row=5, sticky=tk.W)
         self.updateSelectedButton = ttk.Button(frame, text="Update Selected Command", command=self.__updateCommand, width=buttonWidth)
-        self.updateSelectedButton.grid(column=1, row=4, sticky=tk.W)
+        self.updateSelectedButton.grid(column=1, row=5, sticky=tk.W)
         self.deleteSelectedButton = ttk.Button(frame, text="Test Command", command=self.__testCommand, width=buttonWidth)
-        self.deleteSelectedButton.grid(column=0, row=5, sticky=tk.W)
+        self.deleteSelectedButton.grid(column=0, row=6, sticky=tk.W)
         self.deleteSelectedButton = ttk.Button(frame, text="Delete Command", command=self.__deleteCommand, width=buttonWidth)
-        self.deleteSelectedButton.grid(column=1, row=5, sticky=tk.W)
+        self.deleteSelectedButton.grid(column=1, row=6, sticky=tk.W)
 
         for widget in frame.winfo_children():
             widget.grid(padx=0, pady=5)
@@ -159,9 +165,15 @@ class Options:
             self.selectedCommandNameField.insert(1.0, selectedCommand.name)
             self.selectedCommandField.delete(1.0, "end")
             self.selectedCommandField.insert(1.0, selectedCommand.command)
-            self.selectedIconField.delete(1.0, "end")
+            
+            if (selectedCommand.runCommandInBackground):
+                self.selectedCommandRunInBackgroundField.set(1)
+            else:
+                self.selectedCommandRunInBackgroundField.set(0)
+            
+            self.selectedCommandIconField.delete(1.0, "end")
             if (selectedCommand.icon != None):
-                self.selectedIconField.insert(1.0, selectedCommand.icon)
+                self.selectedCommandIconField.insert(1.0, selectedCommand.icon)
             self.__toggleItemSelected(True)
             
         self.listBox.bind('<<ListboxSelect>>', items_selected)
@@ -225,9 +237,7 @@ class Options:
         else:
             self.errorText.set("")
         
-        thread = threading.Thread(target=runCommand, args=(command.command,))
-        thread.start()
-        #runCommand(command.command)
+        runCommand(command.command, command.runCommandInBackground)
         
     """
         The function used to delete the command
@@ -248,7 +258,12 @@ class Options:
     def __getCommandFromTextInputs(self):
         commandName = self.selectedCommandNameField.get(1.0, "end").rstrip("\n")
         command = self.selectedCommandField.get(1.0, "end").rstrip("\n")
-        icon = self.selectedIconField.get(1.0, "end").rstrip("\n")
+        icon = self.selectedCommandIconField.get(1.0, "end").rstrip("\n")
+        
+        if(self.selectedCommandRunInBackgroundField.get() == 0):
+            toRunInBackground = False
+        else:
+            toRunInBackground = True
         
         if (commandName == None or commandName == "" or command == None or command == ""):
             self.errorText.set("Please ensure the name and command box are filled in")
@@ -262,7 +277,7 @@ class Options:
                 self.errorText.set("Please ensure that the icon exists and is an ico file")
                 return
         
-        return Command(commandName, command, icon)
+        return Command(commandName, command, toRunInBackground, icon)
         
     """
         A function to update the settings stored in the settings file and updates the options window
