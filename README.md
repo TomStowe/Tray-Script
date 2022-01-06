@@ -9,8 +9,9 @@ A simple application for running scripts from the system tray
 
 ## 👷 Building
 * To build for windows simply:
-  1. Run `build.cmd`
-  2. Run `build/dist/TrayScript.exe`
+  1. Install the packaged in the `requirements.txt` file
+  2. Run `build.cmd`
+  3. Run `build/dist/TrayScript.exe`
 
 ## 🎓 Licence
 This software is released under the [GNU AGPLv3](LICENSE) licence
