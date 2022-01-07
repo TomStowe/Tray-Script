@@ -32,7 +32,7 @@ class Options:
         Function for creating the options page
         NA: Useless param that is required by the tray icon library
     """
-    def showOptionsPage(self, NA):
+    def showOptionsPage(self, NA):        
         # root window
         self.root = tk.Tk()
         self.root.title("Tray Command Options")
@@ -113,14 +113,35 @@ class Options:
 
         return frame
     
+    """
+        The local method for inserting commands into a tree using a given list of commands and a parent id
+        commands: The list of commands to convert into the tree
+        parentId: The parent id to add the commands to
+    """
+    def __insertCommandsIntoTreeViewLOCAL(self, commands, parentId: str):
+        myIID = parentId
+        indent = ""
+        if (parentId != ''):
+            myIID += '-'
+            indent = '-' * myIID.count('-') + '>'
+        
+        i = 0
+        for command in commands:
+            self.listBox.insert(parent=parentId, index=i, iid=str(myIID) + str(i), text='', values=(indent + command.name), open=True)
+            if (command.commandList != None):
+                self.__insertCommandsIntoTreeViewLOCAL(command.commandList, myIID + str(i))
+            
+            i = i + 1
+    
+    """
+        The method for inserting commands into a tree
+    """
     def __insertCommandsIntoTreeView(self):
         # Clear the tree view
         self.listBox.delete(*self.listBox.get_children())
         
-        i = 0
-        for command in self.commands:
-            self.listBox.insert(parent='', index=i, iid=i, text='', values=(i, command.name))
-            i = i + 1
+        # Insert the commands into the tree
+        self.__insertCommandsIntoTreeViewLOCAL(self.commands, '')
 
 
     """
@@ -132,14 +153,13 @@ class Options:
 
         frame.columnconfigure(0, weight=1)
                 
-        self.listBox = ttk.Treeview(frame, height=15, selectmode=tk.BROWSE, columns=('id', 'Name'), show="tree")
+        self.listBox = ttk.Treeview(frame, height=15, selectmode=tk.BROWSE, columns=('Name'), show="tree")
         scrollbar = ttk.Scrollbar(
         frame,
         orient='vertical',
         command=self.listBox.yview
         )
-        self.listBox.column('#0', width=0, stretch=tk.NO)
-        self.listBox.column('id', width=0, stretch=tk.NO)
+        self.listBox.column('#0', width=40, stretch=tk.YES)
         
         self.listBox.grid(
         column=0,
@@ -172,12 +192,24 @@ class Options:
             if (len(self.listBox.selection()) == 0):
                 return
             
-            selectedCommand = self.commands[int(self.listBox.selection()[0])]
-            self.selectedIndex = int(self.listBox.selection()[0])
+            def getCommandByParentList(commands, parentListIndex):
+                print(parentListIndex)
+                if "-" in parentListIndex:
+                    index = parentListIndex.index("-")
+                    return getCommandByParentList(commands[int(parentListIndex[:int(index)])].commandList, parentListIndex[int(index)+1:])
+                    
+                return commands[int(parentListIndex)]
+            
+            selectedCommand = getCommandByParentList(self.commands, self.listBox.selection()[0])
+            #self.selectedIndex = int(self.listBox.selection()[0])# We need to find a new way to do these selected indexes
             self.selectedCommandNameField.delete(1.0, "end")
             self.selectedCommandNameField.insert(1.0, selectedCommand.name)
             self.selectedCommandField.delete(1.0, "end")
-            self.selectedCommandField.insert(1.0, selectedCommand.command)
+            if (selectedCommand.commandList == None):
+                self.selectedCommandField.insert(1.0, selectedCommand.command)
+                self.selectedCommandField.config(state="normal")
+            else:
+                self.selectedCommandField.config(state="disabled")
             
             if (selectedCommand.runCommandInBackground):
                 self.selectedCommandRunInBackgroundField.set(1)
@@ -278,7 +310,7 @@ class Options:
         else:
             toRunInBackground = True
         
-        if (commandName == None or commandName == "" or command == None or command == ""):
+        if (commandName == None or commandName == "" or ((command == None or command == "") and str(self.selectedCommandField['state']) == "normal")):
             self.errorText.set("Please ensure the name and command box are filled in")
             return None
         
@@ -290,8 +322,7 @@ class Options:
                 self.errorText.set("Please ensure that the icon exists and is an ico file")
                 return
         
-        # Currently set to empty list until the options menu is implemented
-        return Command(commandName, command, [], toRunInBackground, icon)
+        return Command(commandName, command, TODO ADD COMMAND LIST HERE, toRunInBackground, icon)
         
     """
         A function to update the settings stored in the settings file and updates the options window
