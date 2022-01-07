@@ -40,16 +40,9 @@ def addCommandsToTuple(commands, tuple):
 # Convert the command list to a tuple list
 updatedCommands = ()
 updatedCommands = addCommandsToTuple(options.commands, updatedCommands)
-    
-# Are there nested commands?
-nestedCommands = False
-for command in options.commands:
-    if command.commandList != None:
-        nestedCommands = True    
 
-# Add the options page if there are no nested commands as the options page currently doesn't support them
-if not nestedCommands:
-    updatedCommands = updatedCommands + ((("Options", "icons/settings.ico", options.showOptionsPage)),)
+# Add the options page if there are no nested commands
+updatedCommands = updatedCommands + ((("Options", "icons/settings.ico", options.showOptionsPage)),)
 
-sysTrayIcon = SysTrayIcon("icons/main.ico", "Tray Script", updatedCommands, default_menu_index=len(updatedCommands)-1 if not nestedCommands else 0)
+sysTrayIcon = SysTrayIcon("icons/main.ico", "Tray Script", updatedCommands, default_menu_index=len(updatedCommands)-1)
 sysTrayIcon.start()
