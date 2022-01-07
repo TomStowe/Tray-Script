@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter.constants import CENTER
 from src.ConfigReader import loadSettings, saveSettings
 from src.Command import Command, runCommand
 from os.path import exists, splitext
@@ -111,6 +112,16 @@ class Options:
             widget.grid(padx=0, pady=5)
 
         return frame
+    
+    def __insertCommandsIntoTreeView(self):
+        # Clear the tree view
+        self.listBox.delete(*self.listBox.get_children())
+        
+        i = 0
+        for command in self.commands:
+            self.listBox.insert(parent='', index=i, iid=i, text='', values=(i, command.name))
+            i = i + 1
+
 
     """
         Create the frame containing the list of commands created
@@ -120,15 +131,15 @@ class Options:
         frame = ttk.Frame(container)
 
         frame.columnconfigure(0, weight=1)
-        
-        self.listBoxData = tk.StringVar(value=tuple(map(lambda x: x.name, self.commands)))
-        
-        self.listBox = tk.Listbox(frame, height=22, width=30, listvariable=self.listBoxData, selectmode=tk.SINGLE)
+                
+        self.listBox = ttk.Treeview(frame, height=15, selectmode=tk.BROWSE, columns=('id', 'Name'), show="tree")
         scrollbar = ttk.Scrollbar(
         frame,
         orient='vertical',
         command=self.listBox.yview
         )
+        self.listBox.column('#0', width=0, stretch=tk.NO)
+        self.listBox.column('id', width=0, stretch=tk.NO)
         
         self.listBox.grid(
         column=0,
@@ -144,6 +155,8 @@ class Options:
             row=0,
             sticky='ns')
         
+        self.__insertCommandsIntoTreeView()
+        
         self.upButton = ttk.Button(frame, text="^", width=4, command=self.__moveItemUpInList)
         self.upButton.grid(column=0, row=1, sticky="e")
         self.downButton = ttk.Button(frame, text="v", width=4, command=self.__moveItemDownInList)
@@ -156,11 +169,11 @@ class Options:
             """ handle item selected event
             """
             # get selected indices
-            if (len(self.listBox.curselection()) == 0):
+            if (len(self.listBox.selection()) == 0):
                 return
             
-            selectedCommand = self.commands[self.listBox.curselection()[0]]
-            self.selectedIndex = self.listBox.curselection()[0]
+            selectedCommand = self.commands[int(self.listBox.selection()[0])]
+            self.selectedIndex = int(self.listBox.selection()[0])
             self.selectedCommandNameField.delete(1.0, "end")
             self.selectedCommandNameField.insert(1.0, selectedCommand.name)
             self.selectedCommandField.delete(1.0, "end")
@@ -176,7 +189,7 @@ class Options:
                 self.selectedCommandIconField.insert(1.0, selectedCommand.icon)
             self.__toggleItemSelected(True)
             
-        self.listBox.bind('<<ListboxSelect>>', items_selected)
+        self.listBox.bind('<<TreeviewSelect>>', items_selected)
 
         for widget in frame.winfo_children():
             widget.grid(padx=0, pady=3)
@@ -302,20 +315,13 @@ class Options:
         if (self.selectedIndex == 0):
             return
         
-        # Swap the data over on the UI
-        listBoxDataList = self.__getListBoxData()
-        move = listBoxDataList[self.selectedIndex]
-        listBoxDataList.pop(self.selectedIndex)
-        listBoxDataList.insert(self.selectedIndex-1, move)
-        self.listBoxData.set(tuple(listBoxDataList))
-        self.listBox.select_clear(self.selectedIndex)
-        self.listBox.select_set(self.selectedIndex-1)
-        
         # Swap over the data in the stored commands
         move = self.commands[self.selectedIndex]
         self.commands.pop(self.selectedIndex)
         self.commands.insert(self.selectedIndex-1, move)
         self.__updateStoredSettings(False)
+        
+        self.__insertCommandsIntoTreeView()
         
         # Update the selected index stored
         self.selectedIndex = self.selectedIndex - 1
@@ -325,20 +331,13 @@ class Options:
         if (self.selectedIndex >= len(self.commands)):
             return
         
-        # Swap the data over on the UI
-        listBoxDataList = self.__getListBoxData()
-        move = listBoxDataList[self.selectedIndex]
-        listBoxDataList.pop(self.selectedIndex)
-        listBoxDataList.insert(self.selectedIndex+1, move)
-        self.listBoxData.set(tuple(listBoxDataList))
-        self.listBox.select_clear(self.selectedIndex)
-        self.listBox.select_set(self.selectedIndex+1)
-        
         # Swap over the data in the stored commands
         move = self.commands[self.selectedIndex]
         self.commands.pop(self.selectedIndex)
         self.commands.insert(self.selectedIndex+1, move)
         self.__updateStoredSettings(False)
+        
+        self.__insertCommandsIntoTreeView()
         
         # Update the selected index stored
         self.selectedIndex = self.selectedIndex + 1
