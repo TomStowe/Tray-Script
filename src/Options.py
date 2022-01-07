@@ -290,7 +290,8 @@ class Options:
                 self.errorText.set("Please ensure that the icon exists and is an ico file")
                 return
         
-        return Command(commandName, command, toRunInBackground, icon)
+        # Currently set to empty list until the options menu is implemented
+        return Command(commandName, command, [], toRunInBackground, icon)
         
     """
         A function to update the settings stored in the settings file and updates the options window

@@ -28,12 +28,14 @@ class Command:
         The constructor for the Command datatype
         name: The name of the command
         command: The command to perform
+        commandList: The list of commands nested in the command
         runCommandInBackground: Whether to run the command in the background
         icon: The icon to use
     """
-    def __init__(self, name, command, runCommandInBackground, icon=None):
+    def __init__(self, name, command, commandList, runCommandInBackground, icon=None):
         self.name = name
         self.command = command
+        self.commandList = commandList
         self.runCommandInBackground = runCommandInBackground
         self.icon = icon
         
@@ -44,9 +46,13 @@ class Command:
     def __dict__(self):
         outDict = {
             "name": self.name,
-            "command": self.command,
             "runCommandInBackground": self.runCommandInBackground
         }
+        if (self.commandList != None and len(self.commandList) != 0):
+            outDict["commandList"] = self.commandList
+        else:
+            outDict["command"] = self.command
+        
         if (self.icon != None):
             outDict["icon"] = self.icon
         

@@ -7,7 +7,6 @@ from src.Command import Command
     Returns: The commands
 """
 def loadSettings(filePath):
-    print(os.getcwd())
     # Open file
     f = open(os.getcwd() + "\\" + filePath, "r")
     data = json.loads(f.read())
@@ -19,15 +18,22 @@ def loadSettings(filePath):
         return []
     
     # Get the valid commands
+    return __getCommands(jsonCommands)
+        
+def __getCommands(jsonCommands):
     commands = []
     for jsonCommand in jsonCommands:
         name = jsonCommand.get("name", None)
         command = jsonCommand.get("command", None)
+        commandList = jsonCommand.get("commandList", None)
         runCommandInBackground = jsonCommand.get("runCommandInBackground", False)
         icon = jsonCommand.get("icon", None)
         
-        if (name != None and command != None):
-            commands.append(Command(name, command, runCommandInBackground, icon))
+        if (name != None and (command != None or commandList != None)):
+            if (commandList != None and isinstance(commandList, list)):
+                commands.append(Command(name, None, __getCommands(commandList), runCommandInBackground, icon))
+            else:
+                commands.append(Command(name, command, None, runCommandInBackground, icon))
     
     return commands
         
